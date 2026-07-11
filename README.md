@@ -224,20 +224,15 @@ docker-compose down -v
 
 ---
 
-# API Documentation
+## API Documentation
 
-Interactive Swagger docs are available at:
+Interactive Swagger docs available at:
 
 ```
 http://localhost:3000/api
 ```
 
-Swagger provides interactive, up-to-date documentation for every API endpoint, including:
-
-- Full list of routes grouped by module (Auth, Users, Services, Bookings)
-- Request and response schemas for each endpoint
-- Example payloads and validation rules
-- A built-in **Authorize** flow for testing protected routes with a JWT token
+A Postman collection is also included in the repo root (`EN2H-Booking-API.postman_collection.json`) — import it into Postman and set a `baseUrl` variable (or replace `{{baseUrl}}` in requests) to `http://localhost:3000` to test all endpoints directly.
 
 ---
 

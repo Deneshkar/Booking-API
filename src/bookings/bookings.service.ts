@@ -5,12 +5,18 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import {
+  Repository,
+  ILike,
+  FindOptionsWhere,
+} from 'typeorm';
 import { Booking } from './booking.entity';
 import { Service } from '../services/service.entity';
 import { BookingStatus } from './booking-status.enum';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { PaginatedResult } from '../common/dto/paginated-result.dto';
 
 @Injectable()
 export class BookingsService {
@@ -22,7 +28,6 @@ export class BookingsService {
   ) {}
 
   async create(dto: CreateBookingDto): Promise<Booking> {
-    // Rule 1: Booking must belong to an existing service
     const service = await this.serviceRepository.findOne({
       where: { id: dto.serviceId },
     });
@@ -33,10 +38,8 @@ export class BookingsService {
       );
     }
 
-    // Rule 2: Booking date cannot be in the past
     this.validateNotPastDate(dto.bookingDate);
 
-    // Prevent duplicate bookings
     const duplicate = await this.bookingRepository.findOne({
       where: {
         serviceId: dto.serviceId,
@@ -59,10 +62,40 @@ export class BookingsService {
     return this.bookingRepository.save(booking);
   }
 
-  async findAll(status?: BookingStatus): Promise<Booking[]> {
-    const where = status ? { status } : {};
+  async findAll(
+    pagination: PaginationDto,
+    status?: BookingStatus,
+    search?: string,
+  ): Promise<PaginatedResult<Booking>> {
+    const { page = 1, limit = 10 } = pagination;
+    const skip = (page - 1) * limit;
 
-    return this.bookingRepository.find({
+    let where:
+      | FindOptionsWhere<Booking>
+      | FindOptionsWhere<Booking>[];
+
+    if (search) {
+      const searchCondition = ILike(`%${search}%`);
+
+      where = [
+        {
+          customerName: searchCondition,
+          ...(status ? { status } : {}),
+        },
+        {
+          customerEmail: searchCondition,
+          ...(status ? { status } : {}),
+        },
+        {
+          customerPhone: searchCondition,
+          ...(status ? { status } : {}),
+        },
+      ];
+    } else {
+      where = status ? { status } : {};
+    }
+
+    const [data, total] = await this.bookingRepository.findAndCount({
       where,
       relations: {
         service: true,
@@ -70,7 +103,19 @@ export class BookingsService {
       order: {
         createdAt: 'DESC',
       },
+      skip,
+      take: limit,
     });
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async findOne(id: string): Promise<Booking> {
@@ -82,7 +127,9 @@ export class BookingsService {
     });
 
     if (!booking) {
-      throw new NotFoundException(`Booking with ID ${id} not found`);
+      throw new NotFoundException(
+        `Booking with ID ${id} not found`,
+      );
     }
 
     return booking;
@@ -94,7 +141,6 @@ export class BookingsService {
   ): Promise<Booking> {
     const booking = await this.findOne(id);
 
-    // Rule 3: Cancelled bookings cannot be marked as completed
     if (
       booking.status === BookingStatus.CANCELLED &&
       dto.status === BookingStatus.COMPLETED

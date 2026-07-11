@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
@@ -13,6 +14,7 @@ import { ServicesService } from './services.service';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @ApiTags('Services')
 @Controller('services')
@@ -21,14 +23,14 @@ export class ServicesController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth() // shows lock icon in Swagger for this route
+  @ApiBearerAuth()
   create(@Body() dto: CreateServiceDto) {
     return this.servicesService.create(dto);
   }
 
   @Get()
-  findAll() {
-    return this.servicesService.findAll();
+  findAll(@Query() pagination: PaginationDto) {
+    return this.servicesService.findAll(pagination);
   }
 
   @Get(':id')

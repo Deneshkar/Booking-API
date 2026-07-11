@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { Service } from './service.entity';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { PaginatedResult } from '../common/dto/paginated-result.dto';
 
 @Injectable()
 export class ServicesService {
@@ -17,10 +19,25 @@ export class ServicesService {
     return this.serviceRepository.save(service);
   }
 
-  async findAll(): Promise<Service[]> {
-    return this.serviceRepository.find({
+  async findAll(pagination: PaginationDto): Promise<PaginatedResult<Service>> {
+    const { page = 1, limit = 10 } = pagination;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await this.serviceRepository.findAndCount({
       order: { createdAt: 'DESC' },
+      skip,
+      take: limit,
     });
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async findOne(id: string): Promise<Service> {
@@ -32,13 +49,13 @@ export class ServicesService {
   }
 
   async update(id: string, dto: UpdateServiceDto): Promise<Service> {
-    const service = await this.findOne(id); // reuses findOne, throws 404 if missing
+    const service = await this.findOne(id);
     Object.assign(service, dto);
     return this.serviceRepository.save(service);
   }
 
   async remove(id: string): Promise<void> {
-    const service = await this.findOne(id); // throws 404 if missing
+    const service = await this.findOne(id);
     await this.serviceRepository.remove(service);
   }
 }

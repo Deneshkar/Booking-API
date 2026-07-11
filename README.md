@@ -13,11 +13,15 @@ A RESTful Booking Platform API built with **NestJS**, **TypeORM**, and **Postgre
 # Features
 
 - User Registration & Login (JWT Authentication)
+- Refresh Token Authentication
+- Secure Logout
 - Password hashing using bcrypt
-- Role-based authorization
 - Service Management (CRUD)
 - Booking Management
 - Booking Status Updates
+- Pagination
+- Search & Filtering
+- Duplicate Booking Prevention
 - PostgreSQL database integration
 - TypeORM Migrations
 - Request Validation
@@ -57,7 +61,7 @@ Install:
 
 - Docker Desktop
 
-No local installation of Node.js or PostgreSQL is required.
+No local installation of PostgreSQL is required.
 
 ---
 
@@ -70,7 +74,7 @@ git clone <repository-url>
 cd booking-platform-api
 ```
 
-Install dependencies (only for local development):
+Install dependencies:
 
 ```bash
 npm install
@@ -94,16 +98,19 @@ DB_PASSWORD=your_password
 DB_DATABASE=booking_platform
 
 JWT_SECRET=your_secret_key
-JWT_EXPIRES_IN=1d
+JWT_EXPIRES_IN=15m
+
+JWT_REFRESH_SECRET=your_refresh_secret
+JWT_REFRESH_EXPIRES_IN=7d
 ```
 
-> **Note:** When running with Docker, the provided Docker configuration supplies the required environment variables automatically. You only need a `.env` file if you want to customize the configuration.
+> **Note:** When using Docker Compose, the required environment variables can be supplied through the Docker configuration.
 
 ---
 
 # Database Setup (Local)
 
-1. Make sure PostgreSQL is installed and running.
+1. Ensure PostgreSQL is running.
 
 2. Create the database:
 
@@ -111,7 +118,7 @@ JWT_EXPIRES_IN=1d
 CREATE DATABASE booking_platform;
 ```
 
-3. Run the migrations:
+3. Run migrations:
 
 ```bash
 npm run migration:run
@@ -121,20 +128,20 @@ npm run migration:run
 
 # Running Migrations
 
-This project uses **TypeORM migrations** to manage the database schema.
+This project uses **TypeORM migrations** for database schema management.
 
-## Run existing migrations
+## Run migrations
 
 ```bash
 npm run migration:run
 ```
 
-## Generate a new migration
+## Generate a migration
 
-After modifying an entity:
+After modifying entities:
 
 ```bash
-npm run migration:generate -- src/migrations/YourMigrationName
+npm run migration:generate -- src/migrations/MigrationName
 ```
 
 ## Revert the latest migration
@@ -143,38 +150,42 @@ npm run migration:generate -- src/migrations/YourMigrationName
 npm run migration:revert
 ```
 
-> **Docker Note:** When the application is started with Docker Compose, migrations are executed automatically during container startup. You do **not** need to run them manually.
+> **Docker Note:** When running with Docker Compose, migrations execute automatically during application startup.
 
 ---
 
 # Running the Application (Local)
 
-Development mode:
+Development:
 
 ```bash
 npm run start:dev
 ```
 
-Production mode:
+Production:
 
 ```bash
 npm run build
 npm run start:prod
 ```
 
-Application URL:
+Application:
 
 ```
 http://localhost:3000
+```
+
+Swagger:
+
+```
+http://localhost:3000/api
 ```
 
 ---
 
 # Running with Docker
 
-The easiest way to run this project—no need to install PostgreSQL or Node.js locally.
-
-## Start the application
+Start everything:
 
 ```bash
 docker-compose up --build
@@ -182,29 +193,30 @@ docker-compose up --build
 
 This command will:
 
-- Build the application image
-- Start the NestJS API
-- Start a PostgreSQL database
-- Run TypeORM migrations automatically
-- Expose the API at:
+- Build the NestJS application
+- Start PostgreSQL
+- Run TypeORM migrations
+- Launch the API
+
+Application:
 
 ```
 http://localhost:3000
 ```
 
-Swagger Documentation:
+Swagger:
 
 ```
 http://localhost:3000/api
 ```
 
-## Stop the application
+Stop:
 
 ```bash
 docker-compose down
 ```
 
-If you also want to remove the database volume:
+Remove database volume:
 
 ```bash
 docker-compose down -v
@@ -214,23 +226,24 @@ docker-compose down -v
 
 # Swagger Documentation
 
-After starting the application, open:
+After starting the application, visit:
 
 ```
 http://localhost:3000/api
 ```
 
-Swagger provides interactive documentation for every endpoint.
+Swagger provides interactive documentation for every API endpoint.
 
 ---
 
-# API Modules
+# API Endpoints
 
-## Authentication
+## Auth
 
-- Register
-- Login
-- JWT Authentication
+- `POST /auth/register`
+- `POST /auth/login`
+- `POST /auth/refresh`
+- `POST /auth/logout` 🔒
 
 ---
 
@@ -242,27 +255,59 @@ Swagger provides interactive documentation for every endpoint.
 
 ## Services
 
-- Create Service
-- Get All Services
-- Get Service by ID
-- Update Service
-- Delete Service
+- `POST /services`
+- `GET /services`
+- `GET /services/:id`
+- `PATCH /services/:id`
+- `DELETE /services/:id`
+
+Supports pagination:
+
+```
+GET /services?page=1&limit=10
+```
 
 ---
 
 ## Bookings
 
-- Create Booking
-- Get All Bookings
-- Get Booking by ID
-- Update Booking Status
-- Delete Booking
+- `POST /bookings`
+- `GET /bookings`
+- `GET /bookings/:id`
+- `PATCH /bookings/:id/status`
+- `DELETE /bookings/:id`
+
+Supports:
+
+Pagination
+
+```
+GET /bookings?page=1&limit=10
+```
+
+Search
+
+```
+GET /bookings?search=john
+```
+
+Filter by status
+
+```
+GET /bookings?status=PENDING
+```
+
+Combined
+
+```
+GET /bookings?page=1&limit=10&search=john&status=PENDING
+```
 
 ---
 
 # Project Structure
 
-```
+```text
 src/
 │
 ├── auth/
@@ -286,25 +331,25 @@ Install dependencies:
 npm install
 ```
 
-Start in development:
+Development:
 
 ```bash
 npm run start:dev
 ```
 
-Build the project:
+Build:
 
 ```bash
 npm run build
 ```
 
-Run in production:
+Production:
 
 ```bash
 npm run start:prod
 ```
 
-Run unit tests:
+Run tests:
 
 ```bash
 npm run test
@@ -316,7 +361,7 @@ Run end-to-end tests:
 npm run test:e2e
 ```
 
-Generate a migration:
+Generate migration:
 
 ```bash
 npm run migration:generate -- src/migrations/MigrationName
@@ -328,7 +373,7 @@ Run migrations:
 npm run migration:run
 ```
 
-Revert the latest migration:
+Revert migration:
 
 ```bash
 npm run migration:revert
@@ -340,28 +385,51 @@ npm run migration:revert
 
 Swagger can be used to test every endpoint.
 
-Typical testing flow:
+Typical workflow:
 
-1. Register a user
-2. Login
-3. Copy the JWT access token
-4. Click **Authorize** in Swagger
+1. Register a user.
+2. Login.
+3. Copy the access token.
+4. Click **Authorize** in Swagger.
 5. Enter:
 
-```
-Bearer YOUR_TOKEN
+```text
+Bearer YOUR_ACCESS_TOKEN
 ```
 
-6. Test the protected endpoints.
+6. Test all protected endpoints.
+7. When the access token expires, call:
+
+```
+POST /auth/refresh
+```
+
+to obtain a new access token.
+
+---
+
+# Bonus Features Implemented
+
+- ✅ Pagination (Services & Bookings via `?page=&limit=`)
+- ✅ Search bookings (customer name, email, or phone via `?search=`)
+- ✅ Filter bookings by status (`?status=PENDING`)
+- ✅ Swagger documentation (`/api`)
+- ✅ Docker support (`docker-compose up --build`)
+- ✅ Validation using `class-validator` on all DTOs
+- ✅ Global Exception Handling with consistent error responses
+- ✅ Refresh Token authentication (short-lived access token + long-lived refresh token, token rotation, logout invalidation)
+- ✅ Prevent duplicate bookings (same service, date, and time)
 
 ---
 
 # Assumptions Made
 
 - JWT is used for authentication.
-- Passwords are securely hashed using bcrypt.
-- Database schema is managed using TypeORM migrations instead of `synchronize: true`.
-- Validation is handled using NestJS ValidationPipe.
+- Access tokens are short-lived.
+- Refresh tokens are securely stored and rotated.
+- Passwords are hashed using bcrypt.
+- TypeORM migrations manage the database schema.
+- Validation is handled globally using ValidationPipe.
 - PostgreSQL is the primary database.
 - Docker Compose automatically starts the database and applies migrations.
 
@@ -369,16 +437,15 @@ Bearer YOUR_TOKEN
 
 # Future Improvements
 
-- Refresh Tokens
-- Email Verification
-- Password Reset
-- Pagination
-- Search & Filtering
-- CI/CD Pipeline
-- Unit & Integration Test Coverage
-- Granular role-based permissions
-- Health Check Endpoint
-- Logging & Monitoring
+- Add comprehensive unit and end-to-end tests (Jest is already scaffolded by NestJS CLI)
+- Add rate limiting on public booking creation to prevent abuse
+- Implement full role-based access control (Admin, Staff, Customer)
+- Token blacklist/rotation tracking for additional refresh token security
+- Email verification
+- Password reset
+- Health check endpoint
+- Logging and monitoring
+- CI/CD pipeline
 
 ---
 
@@ -390,4 +457,13 @@ This project is licensed under the MIT License.
 
 # Author
 
-Developed as part of the Booking Platform API assignment using **NestJS**, **PostgreSQL**, **TypeORM**, **JWT Authentication**, **Swagger**, and **Docker**.
+Developed as part of the **Booking Platform API Assignment** using:
+
+- NestJS
+- PostgreSQL
+- TypeORM
+- JWT Authentication
+- Refresh Tokens
+- Swagger/OpenAPI
+- Docker
+- TypeScript

@@ -11,18 +11,37 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ unique: true })
+  @Column({
+    type: 'varchar',
+    unique: true,
+  })
   email: string;
 
-  @Column()
-  password: string; // will store the HASHED password, never plain text
+  @Column({
+    type: 'varchar',
+  })
+  password: string;
 
-  @Column({ nullable: true })
-  name: string;
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  name: string | null;
 
-  @CreateDateColumn()
+  @Column({
+    type: 'text',
+    nullable: true,
+    select: false,
+  })
+  hashedRefreshToken: string | null;
+
+  @CreateDateColumn({
+    type: 'timestamp',
+  })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({
+    type: 'timestamp',
+  })
   updatedAt: Date;
 }

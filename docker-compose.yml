@@ -14,6 +14,8 @@ services:
       DATABASE_NAME: booking_platform
       JWT_SECRET: super_secret_key_change_this
       JWT_EXPIRES_IN: 1d
+      JWT_REFRESH_SECRET: another_different_super_secret_key
+      JWT_REFRESH_EXPIRES_IN: 7d
       PORT: 3000
     depends_on:
       - postgres

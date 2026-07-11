@@ -11,19 +11,49 @@ export class UsersService {
   ) {}
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findOne({ where: { email } });
+    return this.userRepository.findOne({
+      where: { email },
+    });
   }
 
   async findById(id: string): Promise<User | null> {
-    return this.userRepository.findOne({ where: { id } });
+    return this.userRepository.findOne({
+      where: { id },
+    });
   }
 
-  async create(email: string, hashedPassword: string, name?: string): Promise<User> {
+  async findByIdWithRefreshToken(id: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        hashedRefreshToken: true,
+      },
+    });
+  }
+
+  async create(
+    email: string,
+    hashedPassword: string,
+    name?: string,
+  ): Promise<User> {
     const user = this.userRepository.create({
       email,
       password: hashedPassword,
       name,
     });
+
     return this.userRepository.save(user);
+  }
+
+  async setRefreshToken(
+    userId: string,
+    hashedRefreshToken: string | null,
+  ): Promise<void> {
+    await this.userRepository.update(userId, {
+      hashedRefreshToken,
+    });
   }
 }

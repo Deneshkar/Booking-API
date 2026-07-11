@@ -224,15 +224,20 @@ docker-compose down -v
 
 ---
 
-# Swagger Documentation
+# API Documentation
 
-After starting the application, visit:
+Interactive Swagger docs are available at:
 
 ```
 http://localhost:3000/api
 ```
 
-Swagger provides interactive documentation for every API endpoint.
+Swagger provides interactive, up-to-date documentation for every API endpoint, including:
+
+- Full list of routes grouped by module (Auth, Users, Services, Bookings)
+- Request and response schemas for each endpoint
+- Example payloads and validation rules
+- A built-in **Authorize** flow for testing protected routes with a JWT token
 
 ---
 
